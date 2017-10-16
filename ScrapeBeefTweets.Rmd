@@ -1,0 +1,94 @@
+---
+title: "Where's the Beef?"
+output: html_notebook
+---
+
+# Preliminary Research:
+
+Big players in the beef industry : 
+- 60 major beef packers in the U.S.
+- 35 milliion cattle slaughtered each year = 26 billion pounds of beef
+- 4 firms control about 75% of the market
+  - Tyson Foods (25%)
+  - Cargill Meat Solutions Corp. (21%)
+  - JBS USA (18.5%)
+  - National Beef Packing Co., LLC (10.5%)
+
+```{r}
+pkgs <-c('twitteR','ROAuth','httr', 'tidyverse')
+for(p in pkgs) if(p %in% rownames(installed.packages()) == FALSE) {install.packages(p)}
+for(p in pkgs) suppressPackageStartupMessages(library(p, quietly=TRUE, character.only=TRUE))
+```
+
+Set API Keys
+```{r message=FALSE}
+api_key <- "ah6EZ3hEc0wowBUKo8Bj8zPvF"
+api_secret <- "Emc7XmzF329qzoV5AhczTEiKl32M2qbPJuapRKcCSGXx3AS2wC"
+access_token <- "918552097645142016-uEsYo7FJNroYYwRTNXYBOuC3ejJM7oV"
+access_token_secret <- "5I7sQ9YYprkpVFroeQy9suXFOqZsIKzSrW3zRRUdKk2S1"
+setup_twitter_oauth(api_key, api_secret, access_token, access_token_secret)
+```
+
+Grab latest tweets
+```{r}
+tweets_tyson <- searchTwitter('@TysonFoods', n=500)
+tweets_cargill <- searchTwitter('@Cargill', n=500)
+tweets_jbs <- searchTwitter('@JBSCareers', n=500) # returning 0, now 1
+#tweets_national <- searchTwitter('@_', n=3000) # can't find twitter account
+```
+
+Loop over tweets and extract text
+```{r}
+feed_tyson <- ldply(tweets_tyson, function(t) t$getText())
+feed_cargill <- ldply(tweets_cargill, function(t) t$getText())
+feed_jbs <- ldply(tweets_jbs, function(t) t$getText())
+```
+
+
+Clean Up Tweets
+```{r}
+tweets <- feed_tyson %>% unlist()
+
+tweets <- tweets %>% 
+  str_replace_all('[[:punct:]]', '') %>%
+  str_replace_all('[[:cntrl:]]', '') %>% 
+  iconv('UTF-8', 'ASCII') %>% 
+  tolower() %>% 
+  str_replace_all('[a-z]{15,}', '') %>% # removes strange mega-strings
+  paste(collapse=" ") %>% 
+  str_replace_all('\\shttp[\\S]*', '')  # work on taking out http terms
+
+# tweets <- tweets %>% 
+#   str_replace_all("[\\s]@[^\\s]*", "") # for Twitter handles
+# tweets %>% str_replace_all("#\\S*", '') # removes hashtags
+# str_replace_all('\\d+', '') # removes numbers
+```
+
+Create DF
+```{r}
+words <- tweets %>% 
+  str_split('\\s+') %>% 
+  unlist()
+
+counts <- words %>% str_count()
+
+word_df <- tibble(Word = words, Count = counts) %>% 
+  distinct(Word, Count)
+```
+
+```{r}
+word_df %>% arrange(desc(Count))
+```
+
+
+Generate Word Cloud
+```{r}
+library(wordcloud)
+library(RColorBrewer)
+
+pal <- brewer.pal(9, "BuGn")[-(1:4)] # colors
+
+wordcloud(words = word_df$Word, word_df$Count, min.freq = min(word_df$Count), 
+            random.order = FALSE, colors = pal)
+```
+
