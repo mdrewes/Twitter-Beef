@@ -22,10 +22,10 @@ for(p in pkgs) suppressPackageStartupMessages(library(p, quietly=TRUE, character
 
 Set API Keys
 ```{r message=FALSE}
-api_key <- "ah6EZ3hEc0wowBUKo8Bj8zPvF"
-api_secret <- "Emc7XmzF329qzoV5AhczTEiKl32M2qbPJuapRKcCSGXx3AS2wC"
-access_token <- "918552097645142016-uEsYo7FJNroYYwRTNXYBOuC3ejJM7oV"
-access_token_secret <- "5I7sQ9YYprkpVFroeQy9suXFOqZsIKzSrW3zRRUdKk2S1"
+api_key <- "xxxxxxxxxxxxxxxxx"
+api_secret <- "xxxxxxxxxxxxxxxxx"
+access_token <- "xxxxxxxxxxxxxxxxx"
+access_token_secret <- "xxxxxxxxxxxxxxxxx"
 setup_twitter_oauth(api_key, api_secret, access_token, access_token_secret)
 ```
 
