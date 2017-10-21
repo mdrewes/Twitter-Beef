@@ -15,7 +15,7 @@ Big players in the beef industry :
   - National Beef Packing Co., LLC (10.5%)
 
 ```{r}
-pkgs <-c('twitteR','ROAuth','httr', 'tidyverse')
+pkgs <-c('twitteR','ROAuth','httr', 'tidyverse', 'plyr', 'stringr')
 for(p in pkgs) if(p %in% rownames(installed.packages()) == FALSE) {install.packages(p)}
 for(p in pkgs) suppressPackageStartupMessages(library(p, quietly=TRUE, character.only=TRUE))
 ```
@@ -43,7 +43,6 @@ feed_tyson <- ldply(tweets_tyson, function(t) t$getText())
 feed_cargill <- ldply(tweets_cargill, function(t) t$getText())
 feed_jbs <- ldply(tweets_jbs, function(t) t$getText())
 ```
-
 
 Clean Up Tweets
 ```{r}
@@ -76,10 +75,12 @@ word_df <- tibble(Word = words, Count = counts) %>%
   distinct(Word, Count)
 ```
 
-```{r}
-word_df %>% arrange(desc(Count))
+We need to remove the tweet tokens that aren't traditional English words.
+```{r message=FALSE}
+english_words <- read_csv('words_alpha.txt') %>% unlist()
+word_df <- word_df %>% filter(Word %in% english_words)
+word_df %>% filter(Count >= 10) %>% arrange(desc(Count))
 ```
-
 
 Generate Word Cloud
 ```{r}
@@ -88,7 +89,7 @@ library(RColorBrewer)
 
 pal <- brewer.pal(9, "BuGn")[-(1:4)] # colors
 
-wordcloud(words = word_df$Word, word_df$Count, min.freq = min(word_df$Count), 
+wordcloud(words = word_df$Word, word_df$Count, min.freq = 10, 
             random.order = FALSE, colors = pal)
 ```
 
