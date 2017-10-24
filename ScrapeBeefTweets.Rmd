@@ -91,18 +91,3 @@ beef <- tweets_beef %>% feed_to_words(comp_words = english_words)
 ```
 *"flavorful", "delicious", "mouthwatering", "irresistible", "ingredient", "tenderness" vs. "disgusting"*
 
-Generate Word Cloud
-```{r}
-library(wordcloud)
-library(RColorBrewer)
-
-pal <- brewer.pal(9, "BuGn")[-(1:4)] # colors
-
-wordcloud(words = word_df$Word, word_df$Count, min.freq = 10, 
-            random.order = FALSE, colors = pal)
-```
-
-```{r}
-
-```
-

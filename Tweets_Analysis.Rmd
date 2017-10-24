@@ -1,0 +1,48 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Load Packages
+```{r message=FALSE}
+library(tidyverse)
+```
+
+Load Data
+```{r}
+ds <- c('jbs', 'tyson', 'cargill', 'beef')
+for (i in 1:length(ds)){load(paste0(ds,'.Rdata')[i])}
+```
+
+Prep For Word Clouds
+```{r message=FALSE}
+library(wordcloud)
+library(RColorBrewer)
+  pal <- brewer.pal(9, "BuGn")[-(1:4)] # colors
+```
+
+Generate Word Clouds
+```{r warning=FALSE}
+wordcloud(words = beef$Word, freq = beef$Count, min.freq = 0.1, scale = c(1,0.5),
+          max.words = 200, random.order = FALSE, rot.per=0, colors = brewer.pal(8, "Dark2"))
+```
+
+```{r warning=FALSE}
+wordcloud(words = cargill$Word, freq = cargill$Count, min.freq = 0.1, 
+          scale = c(1,0.5), max.words = 200, random.order = FALSE, rot.per=0, colors = brewer.pal(8, "Dark2"))
+```
+
+```{r warning=FALSE}
+wordcloud(words = jbs$Word, freq = jbs$Count, min.freq = 0.1,
+          max.words = 200, random.order = FALSE, rot.per=0, colors = brewer.pal(8, "Dark2"))
+```
+
+```{r warning=FALSE}
+wordcloud(words = tyson$Word, freq = tyson$Count, min.freq = 0.1, scale = c(1,0.5),
+          max.words = 200, random.order = FALSE, rot.per=0, colors = brewer.pal(8, "Dark2"))
+```
+
+```{r}
+
+```
+
