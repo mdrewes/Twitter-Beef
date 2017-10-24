@@ -29,58 +29,67 @@ access_token_secret <- "xxxxxxxxxxxxxxxxx"
 setup_twitter_oauth(api_key, api_secret, access_token, access_token_secret)
 ```
 
+Function For Getting Words From Twitter Feed
+```{r}
+feed_to_words <- function(raw_scrape, comp_words = NULL){
+  
+  feed <- raw_scrape %>% 
+    ldply(function(t) t$getText())
+  
+  words <- feed %>% 
+    unlist() %>% 
+    str_replace_all('[[:punct:]]', '') %>%
+    str_replace_all('[[:cntrl:]]', '') %>% 
+    iconv('UTF-8', 'ASCII') %>% 
+    tolower() %>% 
+    str_replace_all('[a-z]{15,}', '') %>% # removes strange mega-strings
+    paste(collapse=" ") %>% 
+    str_replace_all('\\shttp[\\S]*', '') %>%  # work on taking out http terms
+    str_split('\\s+') %>% 
+    unlist()
+  
+  # tweets <- tweets %>% 
+  #   str_replace_all("[\\s]@[^\\s]*", "") # for Twitter handles
+  # tweets %>% str_replace_all("#\\S*", '') # removes hashtags
+  # str_replace_all('\\d+', '') # removes numbers
+  
+  counts <- words %>% str_count()
+  
+  word_df <- tibble(Word = words, Count = counts) %>% 
+    distinct(Word, Count)
+  
+  if(!is.null(comp_words)){
+    comp_words <- comp_words %>% unlist()
+    word_df <- word_df %>% 
+      filter(Word %in% english_words) %>% 
+      arrange(desc(Count))
+  }
+  return(word_df)
+}
+```
+
 Grab latest tweets
 ```{r}
 tweets_tyson <- searchTwitter('@TysonFoods', n=500)
 tweets_cargill <- searchTwitter('@Cargill', n=500)
 tweets_jbs <- searchTwitter('@JBSCareers', n=500) # returning 0, now 1
 #tweets_national <- searchTwitter('@_', n=3000) # can't find twitter account
+tweets_beef <- searchTwitter("#beef exclude:retweets", n=3200) # '#beef' tweets
 ```
 
-Loop over tweets and extract text
+Get Dictionary of Words to Reference
 ```{r}
-feed_tyson <- ldply(tweets_tyson, function(t) t$getText())
-feed_cargill <- ldply(tweets_cargill, function(t) t$getText())
-feed_jbs <- ldply(tweets_jbs, function(t) t$getText())
-```
-
-Clean Up Tweets
-```{r}
-tweets <- feed_tyson %>% unlist()
-
-tweets <- tweets %>% 
-  str_replace_all('[[:punct:]]', '') %>%
-  str_replace_all('[[:cntrl:]]', '') %>% 
-  iconv('UTF-8', 'ASCII') %>% 
-  tolower() %>% 
-  str_replace_all('[a-z]{15,}', '') %>% # removes strange mega-strings
-  paste(collapse=" ") %>% 
-  str_replace_all('\\shttp[\\S]*', '')  # work on taking out http terms
-
-# tweets <- tweets %>% 
-#   str_replace_all("[\\s]@[^\\s]*", "") # for Twitter handles
-# tweets %>% str_replace_all("#\\S*", '') # removes hashtags
-# str_replace_all('\\d+', '') # removes numbers
-```
-
-Create DF
-```{r}
-words <- tweets %>% 
-  str_split('\\s+') %>% 
-  unlist()
-
-counts <- words %>% str_count()
-
-word_df <- tibble(Word = words, Count = counts) %>% 
-  distinct(Word, Count)
-```
-
-We need to remove the tweet tokens that aren't traditional English words.
-```{r message=FALSE}
 english_words <- read_csv('words_alpha.txt') %>% unlist()
-word_df <- word_df %>% filter(Word %in% english_words)
-word_df %>% filter(Count >= 10) %>% arrange(desc(Count))
 ```
+
+Apply Function to Company/Topic Tweets
+```{r}
+tyson <- tweets_tyson %>% feed_to_words(comp_words = english_words)
+cargill <- tweets_cargill %>% feed_to_words(comp_words = english_words)
+jbs <- tweets_jbs %>% feed_to_words(comp_words = english_words)
+beef <- tweets_beef %>% feed_to_words(comp_words = english_words)
+```
+*"flavorful", "delicious", "mouthwatering", "irresistible", "ingredient", "tenderness" vs. "disgusting"*
 
 Generate Word Cloud
 ```{r}
@@ -91,5 +100,9 @@ pal <- brewer.pal(9, "BuGn")[-(1:4)] # colors
 
 wordcloud(words = word_df$Word, word_df$Count, min.freq = 10, 
             random.order = FALSE, colors = pal)
+```
+
+```{r}
+
 ```
 
