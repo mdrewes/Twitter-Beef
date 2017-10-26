@@ -1,0 +1,10 @@
+Beef Project Progress/Plan
+
+Done : Scraped Tweets, Extracted Text, Cleaned Text, Created Word/Count Data Frames, Saved DF's for future use
+
+Used word clouds to visualize word frequencies
+
+
+Next : 
+
+LDA(?)
