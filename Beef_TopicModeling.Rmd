@@ -1,0 +1,125 @@
+---
+title: "Beef Topic Modeling"
+output: html_notebook
+---
+
+# Topic Modeling to Inform Survey Questions
+
+```{r, message=FALSE}
+library(tidyverse)
+library(tm)
+library(topicmodels)
+library(tidytext)
+library(plyr)
+library(stringr)
+library(ggplot2)
+```
+Load Libraries
+
+```{r}
+raw <- c('tyson_scrape', 'cargill_scrape', 'beef_scrape')
+for (i in 1:length(raw)){load(paste0(raw[i],'.Rdata', sep = ""))}
+```
+Load Previously-Scraped Raw Tweets
+
+```{r}
+tyson <- tweets_tyson %>% ldply(function(t) t$getText())
+cargill <- tweets_cargill %>% ldply(function(t) t$getText())
+beef <- tweets_beef %>% ldply(function(t) t$getText())
+all_tweets <- rbind(tyson, cargill, beef)
+```
+Extract Text
+
+```{r, message=FALSE, include=FALSE} 
+
+english_words <- read_csv('words_alpha.txt') %>% unlist()
+words <- all_tweets %>% 
+    unlist() %>% 
+    str_replace_all('[[:punct:]]', '') %>%
+    str_replace_all('[[:cntrl:]]', '') %>% 
+    iconv('UTF-8', 'ASCII') %>% 
+    tolower() %>% 
+    str_replace_all('[a-z]{15,}', '') %>% # removes strange mega-strings
+    paste(collapse=" ") %>% 
+    str_replace_all('\\shttp[\\S]*', '') %>%  # work on taking out http terms
+    str_split('\\s+') %>% 
+    unlist()
+counts <- words %>% str_count()
+
+word_df <- tibble(Word = words, Count = counts) %>% 
+  distinct(Word, Count)
+
+custom_stop <- word_df %>% 
+  filter(!(Word %in% english_words)) %>% 
+  select(Word) %>% 
+  unlist()
+
+names(custom_stop) <- NULL
+
+# problem in custom_stop  # , custom_stop
+``` 
+Generate Custom Stop Words
+
+```{r}
+all_corpus <- all_tweets %>% 
+  VectorSource() %>% 
+  Corpus()
+
+all_corpus <- all_corpus %>%
+  tm_map(content_transformer(tolower))  %>% 
+  tm_map(removePunctuation) %>% 
+  tm_map(stripWhitespace) %>% 
+  tm_map(removeWords,c(stopwords("english"))) 
+
+all_dtm <- DocumentTermMatrix(all_corpus)
+```
+Get dtm (same way as CountingCockroaches)
+
+```{r}
+num_topics <- 2:20
+num_terms <- 40
+all_topics <- list()
+all_terms <- list()
+for ( k in num_topics ){            # takes 3 min for 2 through 20 topics
+  all_topics[[k-1]] <- all_dtm %>% 
+    LDA(method = "Gibbs", k = k, control = list(seed = 42))
+  
+  all_terms[[k-1]] <- all_topics[[k-1]] %>% 
+    terms(k = num_terms) 
+}
+```
+Fit LDA Model for different parameter values
+
+
+```{r}
+
+betas <- list()
+for ( n in 1:length(all_topics) ) {
+  betas[[n]] <- all_topics[[n]] %>% tidy(matrix = "beta")
+}
+
+top_terms <- list()
+for (k in 1:length(betas)) {
+  
+  top_terms[[k]] <- betas[[k]] %>%
+    group_by(topic) %>%
+    top_n(10, beta) %>%
+    ungroup() %>%
+    arrange(topic, -beta)
+  
+}
+
+for ( t in 1:length(top_terms) ) {
+  print(  
+    top_terms[[t]] %>%
+      mutate(term = reorder(term, beta)) %>%
+      ggplot(aes(term, beta, fill = factor(topic))) +
+      geom_col(show.legend = FALSE) +
+      facet_wrap( ~topic, scales = "free") +
+      coord_flip()
+  )
+}
+```
+
+
+

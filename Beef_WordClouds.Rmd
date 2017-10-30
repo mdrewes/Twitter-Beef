@@ -42,7 +42,4 @@ wordcloud(words = tyson$Word, freq = tyson$Count, min.freq = 0.1, scale = c(1,0.
           max.words = 200, random.order = FALSE, rot.per=0, colors = brewer.pal(8, "Dark2"))
 ```
 
-```{r}
-
-```
 
