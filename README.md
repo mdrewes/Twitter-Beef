@@ -6,7 +6,7 @@
 
 ## Next Step
 
-Run a topic model to come up with a list of concerns and interests that can be used for a "select all that apply question" in the survey. 
+Run a topic model to come up with a list of concerns and interests that can be used for a "select all that apply" question in the survey. 
 
 Ex.
 
